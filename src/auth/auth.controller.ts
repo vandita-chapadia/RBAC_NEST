@@ -35,6 +35,12 @@ export class AuthController {
     return this.authService.findUser(+userId);
   }
 
+  @checkAbilities({ action: 'read', subject: 'users' })
+  @Get('user/')
+  async findAll() {
+    return this.authService.findAll();
+  }
+
   @checkAbilities({ action: 'delete', subject: 'users' })
   @Delete('user/:id')
   async deleteUser(@Param('id') userId: string, @Request() req) {

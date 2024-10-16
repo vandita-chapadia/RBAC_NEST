@@ -8,7 +8,7 @@ import {
   Body,
   UseGuards,
   Request,
-  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CaslAbilityFactory } from 'src/casl/casl.factory';
 import { ArticlesService } from './article.service';
@@ -35,7 +35,7 @@ export class ArticlesController {
     ForbiddenError.from(ability)
       .setMessage('Not Allowed')
       .throwUnlessCan('create', 'article');
-    return this.articlesService.create({ ...body, owner_id: req.user.id });
+    return this.articlesService.create({ ...body, owner_id: req.user.user_id });
   }
 
   @checkAbilities({ action: 'read', subject: 'article' })
@@ -45,6 +45,10 @@ export class ArticlesController {
     const ability = this.caslAbilityFactory.createAbility(
       req.user.role.permission,
     );
+
+    if (!article) {
+      throw new NotFoundException(`Article with ID ${id} not found`);
+    }
 
     ForbiddenError.from(ability)
       .setMessage('Not Allowed')
@@ -61,6 +65,10 @@ export class ArticlesController {
       req.user.role.permission,
     );
 
+    if (!article) {
+      throw new NotFoundException(`Article with ID ${id} not found`);
+    }
+
     ForbiddenError.from(ability)
       .setMessage('Not Allowed')
       .throwUnlessCan('update', subject('article', article));
@@ -76,9 +84,13 @@ export class ArticlesController {
       req.user.role.permission,
     );
 
+    if (!article) {
+      throw new NotFoundException(`Article with ID ${id} not found`);
+    }
+
     ForbiddenError.from(ability)
       .setMessage('Not Allowed')
-      .throwUnlessCan('read', subject('delete', article));
+      .throwUnlessCan('delete', subject('article', article));
 
     return this.articlesService.delete(+id);
   }

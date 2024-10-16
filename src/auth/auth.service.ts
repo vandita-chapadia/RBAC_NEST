@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { users } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -41,5 +40,9 @@ export class AuthService {
 
   async deleteUser(userId: number) {
     return this.prismaService.users.delete({ where: { user_id: userId } });
+  }
+
+  async findAll() {
+    return this.prismaService.users.findMany();
   }
 }
