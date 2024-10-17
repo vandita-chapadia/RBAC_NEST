@@ -1,7 +1,6 @@
 import { Reflector } from '@nestjs/core';
 import { ForbiddenError } from '@casl/ability';
 import {
-  BadRequestException,
   CanActivate,
   ExecutionContext,
   ForbiddenException,

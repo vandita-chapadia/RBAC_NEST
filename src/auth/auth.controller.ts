@@ -15,6 +15,7 @@ import { checkAbilities } from 'src/common/decorator/policy.decorator';
 import { PolicyGuard } from 'src/common/guards/policy.guard';
 import { ForbiddenError, subject } from '@casl/ability';
 import { CaslAbilityFactory } from 'src/casl/casl.factory';
+import { RegisterDto } from './dto/register.dto';
 
 @UseGuards(PolicyGuard)
 @Controller('auth')
@@ -27,6 +28,19 @@ export class AuthController {
   @Post('login')
   public login(@Body() loginDTO: LoginDto) {
     return this.authService.signIn(loginDTO.email);
+  }
+
+  @checkAbilities({ action: 'create', subject: 'users' })
+  @Post('create')
+  public createUser(@Body() registerDTO: RegisterDto, @Request() req) {
+    const ability = this.caslAbilityFactory.createAbility(
+      req.user.role.permission,
+    );
+
+    ForbiddenError.from(ability)
+      .setMessage('Not Allowed')
+      .throwUnlessCan('create', subject('users', req.user));
+    return this.authService.createUser(registerDTO.email, registerDTO.role_id);
   }
 
   @checkAbilities({ action: 'read', subject: 'users' })

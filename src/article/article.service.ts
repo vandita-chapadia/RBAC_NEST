@@ -7,7 +7,6 @@ export class ArticlesService {
   constructor(private prisma: PrismaService) {}
 
   async create(data: Article): Promise<Article> {
-    console.log(data);
     return this.prisma.article.create({
       data,
     });

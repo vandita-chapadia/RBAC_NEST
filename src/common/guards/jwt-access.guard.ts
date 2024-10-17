@@ -1,14 +1,22 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class JwtAccessGuard extends AuthGuard('jwt-access') {
-  constructor(private reflector: Reflector) {
+  constructor(
+    private reflector: Reflector,
+    private jwtService: JwtService,
+  ) {
     super();
   }
 
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>('PUBLIC', [
       context.getHandler(),
       context.getClass(),
@@ -16,6 +24,32 @@ export class JwtAccessGuard extends AuthGuard('jwt-access') {
     if (isPublic) {
       return true;
     }
-    return super.canActivate(context);
+
+    const request = context.switchToHttp().getRequest();
+    const token = this.extractTokenFromHeader(request);
+
+    if (!token) {
+      throw new UnauthorizedException('No JWT token provided');
+    }
+
+    try {
+      const decoded = await this.jwtService.verifyAsync(token, {
+        secret: 'jwt-secret',
+      });
+
+      request.user = decoded;
+
+      return true;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid JWT token');
+    }
+  }
+
+  private extractTokenFromHeader(request: any): string | null {
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.split(' ')[1];
+    }
+    return null;
   }
 }

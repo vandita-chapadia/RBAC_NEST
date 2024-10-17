@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -25,6 +30,33 @@ export class AuthService {
       }),
       user,
     };
+  }
+
+  async createUser(email: string, role_id: number) {
+    const existingUser = await this.prismaService.users.findUnique({
+      where: { user_email: email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User already exists!');
+    }
+
+    const roleExists = await this.prismaService.role.findUnique({
+      where: { role_id: role_id },
+    });
+
+    if (!roleExists) {
+      throw new BadRequestException('Invalid roleId. Role does not exist.');
+    }
+
+    const newUser = await this.prismaService.users.create({
+      data: {
+        user_email: email,
+        role_id: role_id,
+      },
+    });
+
+    return newUser;
   }
 
   async findUser(userId: number) {
